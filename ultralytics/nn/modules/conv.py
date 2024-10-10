@@ -1,4 +1,4 @@
-# Ultralytics YOLO 🚀, AGPL-3.0 license
+# Ultralytics YOLO ðŸš€, AGPL-3.0 license
 """
 Convolution modules
 """
@@ -22,6 +22,7 @@ __all__ = (
     "ChannelAttention",
     "SpatialAttention",
     "CBAM",
+    "SimAM",
     "Concat",
     "RepConv",
 )
