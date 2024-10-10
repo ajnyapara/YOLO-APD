@@ -1,4 +1,4 @@
-# Ultralytics YOLO 🚀, AGPL-3.0 license
+# Ultralytics YOLO ðŸš€, AGPL-3.0 license
 """
 Ultralytics modules. Visualize with:
 
@@ -21,6 +21,7 @@ from .block import (
     DFL,
     SPP,
     SimSPPF,
+    SimSPPFAM,
     SPPF,
     Bottleneck,
     BottleneckCSP,
@@ -108,6 +109,7 @@ __all__ = (
     "HGStem",
     "SPP",
     "SimAM",
+    "SimSPPF",
     "SimSPPF",
     "SPPF",
     "C1",
