@@ -1,4 +1,4 @@
-# Ultralytics YOLO 🚀, AGPL-3.0 license
+# Ultralytics YOLO ðŸš€, AGPL-3.0 license
 
 import contextlib
 from copy import deepcopy
@@ -28,6 +28,7 @@ from ultralytics.nn.modules import (
     C3TR,
     SPP,
     SimSPPF,
+    SimSPPFAM,
     SPPF,
     Bottleneck,
     BottleneckCSP,
@@ -164,7 +165,7 @@ class BaseModel(nn.Module):
     def _predict_augment(self, x):
         """Perform augmentations on input image x and return augmented inference."""
         LOGGER.warning(
-            f"WARNING ⚠️ {self.__class__.__name__} does not support augmented inference yet. "
+            f"WARNING âš ï¸ {self.__class__.__name__} does not support augmented inference yet. "
             f"Reverting to single-scale inference instead."
         )
         return self._predict_once(x)
@@ -678,7 +679,7 @@ def torch_safe_load(weight):
         if e.name == "models":
             raise TypeError(
                 emojis(
-                    f"ERROR ❌️ {weight} appears to be an Ultralytics YOLOv5 model originally trained "
+                    f"ERROR âŒï¸ {weight} appears to be an Ultralytics YOLOv5 model originally trained "
                     f"with https://github.com/ultralytics/yolov5.\nThis model is NOT forwards compatible with "
                     f"YOLOv8 at https://github.com/ultralytics/ultralytics."
                     f"\nRecommend fixes are to train a new model using the latest 'ultralytics' package or to "
@@ -686,7 +687,7 @@ def torch_safe_load(weight):
                 )
             ) from e
         LOGGER.warning(
-            f"WARNING ⚠️ {weight} appears to require '{e.name}', which is not in ultralytics requirements."
+            f"WARNING âš ï¸ {weight} appears to require '{e.name}', which is not in ultralytics requirements."
             f"\nAutoInstall will run now for '{e.name}' but this feature will be removed in the future."
             f"\nRecommend fixes are to train a new model using the latest 'ultralytics' package or to "
             f"run a command with an official YOLOv8 model, i.e. 'yolo predict model=yolov8n.pt'"
@@ -809,7 +810,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         if not scale:
             scale = tuple(scales.keys())[0]
             LOGGER.warning(
-                f"WARNING ⚠️ no model scale passed. Assuming scale='{scale}'."
+                f"WARNING âš ï¸ no model scale passed. Assuming scale='{scale}'."
             )
         depth, width, max_channels = scales[scale]
 
@@ -995,7 +996,7 @@ def yaml_model_load(path):
     if path.stem in (f"yolov{d}{x}6" for x in "nsmlx" for d in (5, 8)):
         new_stem = re.sub(r"(\d+)([nslmx])6(.+)?$", r"\1\2-p6\3", path.stem)
         LOGGER.warning(
-            f"WARNING ⚠️ Ultralytics YOLO P6 models now use -p6 suffix. Renaming {path.stem} to {new_stem}."
+            f"WARNING âš ï¸ Ultralytics YOLO P6 models now use -p6 suffix. Renaming {path.stem} to {new_stem}."
         )
         path = path.with_name(new_stem + path.suffix)
 
@@ -1094,7 +1095,7 @@ def guess_model_task(model):
 
     # Unable to determine task from model
     LOGGER.warning(
-        "WARNING ⚠️ Unable to automatically guess model task, assuming 'task=detect'. "
+        "WARNING âš ï¸ Unable to automatically guess model task, assuming 'task=detect'. "
         "Explicitly define task for your model, i.e. 'task=detect', 'segment', 'classify', or 'pose'."
     )
     return "detect"  # assume detect
