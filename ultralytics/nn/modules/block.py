@@ -1,4 +1,4 @@
-# Ultralytics YOLO 🚀, AGPL-3.0 license
+# Ultralytics YOLO ðŸš€, AGPL-3.0 license
 """
 Block modules
 """
@@ -7,10 +7,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .conv import Conv, SimConv, DWConv, GhostConv, LightConv, RepConv
+from .conv import Conv, SimConv, DWConv, GhostConv, LightConv, RepConv,SimAM
 from .transformer import TransformerBlock
 
-__all__ = ('DFL', 'HGBlock', 'HGStem', 'SPP', 'SPPF', 'SimSPPF', 'C1', 'C2', 'C3', 'C2f', 'C2fAttn', 'C3x', 'C3TR', 'C3Ghost',
+__all__ = ('DFL', 'HGBlock', 'HGStem', 'SPP', 'SPPF', 'SimSPPF','SimSPPFAM', 'C1', 'C2', 'C3', 'C2f', 'C2fAttn', 'C3x', 'C3TR', 'C3Ghost',
            'GhostBottleneck', 'Bottleneck', 'BottleneckCSP', 'Proto', 'RepC3')
 
 
@@ -130,6 +130,76 @@ class SimSPPF(nn.Module):
         y1 = self.m(x)
         y2 = self.m(y1)
         return self.cv2(torch.cat([x, y1, y2, self.m(y2)], 1))
+
+import torch
+import torch.nn as nn
+
+class SimConv(nn.Module):
+    """A simplified convolutional block."""
+    def __init__(self, in_channels, out_channels, kernel_size, stride):
+        super().__init__()
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        return self.relu(self.conv(x))
+
+class simam_module(nn.Module):
+    """SimAM Attention Module."""
+    def __init__(self, e_lambda=1e-4):
+        super(simam_module, self).__init__()
+        self.activation = nn.Sigmoid()
+        self.e_lambda = e_lambda
+
+    def forward(self, x):
+        b, c, h, w = x.size()
+        n = w * h - 1
+        x_minus_mu_square = (x - x.mean(dim=[2, 3], keepdim=True)).pow(2)
+        y = x_minus_mu_square / (4 * (x_minus_mu_square.sum(dim=[2, 3], keepdim=True) / n + self.e_lambda)) + 0.5
+        return x * self.activation(y)
+
+class SimSPPFAM(nn.Module):
+    '''Simplified SPPF with SimAM attention.'''
+
+    def __init__(self, c1, c2, k=5, e_lambda=1e-4):
+        super().__init__()
+        c_ = c1 // 2  # hidden channels
+
+        # First convolutional layer
+        self.cv1 = SimConv(c1, c_, 1, 1)  # Conv layer to reduce channels by half
+
+        # Convolution layer after concatenation to adjust channels to 1024
+        self.cv_adjust = SimConv(c_ * 4, 1024, 1, 1)  # Adjust concatenated output to 1024 channels
+        
+        # Final convolution after attention mechanism
+        self.cv2 = SimConv(1024, c2, 1, 1)  # Final conv layer after attention
+
+        # Max pooling layer
+        self.m = nn.MaxPool2d(kernel_size=k, stride=1, padding=k // 2)
+
+        # SimAM attention module
+        self.simam = simam_module(e_lambda)  # Instantiate SimAM with the given e_lambda value
+
+    def forward(self, x):
+        # Apply first convolution
+        x = self.cv1(x)
+
+        # Apply max pooling multiple times
+        y1 = self.m(x)
+        y2 = self.m(y1)
+        y3 = self.m(y2)
+
+        # Concatenate the input and pooled outputs
+        concatenated_output = torch.cat([x, y1, y2, y3], dim=1)
+
+        # Apply SimAM attention
+        attention_output = self.simam(concatenated_output)
+
+        # Adjust the number of channels to match 1024 before final conv
+        adjusted_output = self.cv_adjust(attention_output)
+
+        # Apply the second convolution to reduce channels to c2
+        return self.cv2(adjusted_output)
 
 class SPPF(nn.Module):
     """Spatial Pyramid Pooling - Fast (SPPF) layer for YOLOv5 by Glenn Jocher."""
